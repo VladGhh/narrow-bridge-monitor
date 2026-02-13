@@ -5,7 +5,7 @@
 #include "monitor.h"
 #include "condition.h"
 
-/* --- CONSTANTE --- */
+
 #define NEUTRU 0
 #define NORD   1
 #define SUD    2
@@ -13,7 +13,6 @@
 #define LIMITA 5   // Limita de înfometare
 #define CAPACITATE_MAX 3
 
-/* --- STRUCTURA MONITORULUI --- */
 typedef struct {
     Monitor mon;
     Condition coada_nord;
@@ -31,7 +30,7 @@ typedef struct {
 
 PodMonitor pod;
 
-/* --- 1. Inițializare --- */
+
 void Pod_Init(PodMonitor *p) {
     monitor_init(&p->mon);
     condition_init(&p->coada_nord);
@@ -49,12 +48,9 @@ void Pod_Init(PodMonitor *p) {
 void Intra_Nord(PodMonitor *p) {
     monitor_enter(&p->mon);
 
-    p->asteapta_nord++; // Mă anunț că am ajuns la barieră
+    p->asteapta_nord++; 
 
-    // Condiția de așteptare din pseudocod:
-    // 1. Pod plin
-    // 2. Directie opusa (SUD)
-    // 3. (Starvation) Directie e NORD + am depasit limita + cineva asteapta la SUD
+   
     while (p->nr_masini == CAPACITATE_MAX ||
            p->directie == SUD ||
            (p->directie == NORD && p->consecutive >= LIMITA && p->asteapta_sud > 0)) {
@@ -62,7 +58,7 @@ void Intra_Nord(PodMonitor *p) {
         condition_wait(&p->coada_nord, &p->mon);
     }
 
-    // Am primit verde!
+
     p->asteapta_nord--;
     p->nr_masini++;
     p->directie = NORD;
@@ -84,18 +80,16 @@ void Iese_Nord(PodMonitor *p) {
         p->directie = NEUTRU;
         p->consecutive = 0;
 
-        // Logica de wake-up din pseudocod:
-        // Prioritate celor de la SUD dacă așteaptă
+        
         if (p->asteapta_sud > 0) {
             printf("   -> Pod liber! Prioritate SUD (Broadcast)\n");
             condition_broadcast(&p->coada_sud);
         } else {
-            // Dacă nu e nimeni la Sud, dăm voie celor de la Nord
+          
             condition_broadcast(&p->coada_nord);
         }
     } else {
-        // Podul nu e gol, dar s-a eliberat un loc.
-        // Mai chem un coleg de la NORD doar dacă nu e cazul de cedare (starvation)
+       
         if (p->consecutive < LIMITA || p->asteapta_sud == 0) {
             condition_signal(&p->coada_nord);
         }
@@ -111,7 +105,7 @@ void Intra_Sud(PodMonitor *p) {
 
     p->asteapta_sud++;
 
-    // Astept daca: plin SAU directie e Nord SAU (directie e Sud dar am depasit limita SI asteapta Nord)
+   
     while (p->nr_masini == CAPACITATE_MAX ||
            p->directie == NORD ||
            (p->directie == SUD && p->consecutive >= LIMITA && p->asteapta_nord > 0)) {
@@ -140,7 +134,7 @@ void Iese_Sud(PodMonitor *p) {
         p->directie = NEUTRU;
         p->consecutive = 0;
 
-        // Invers față de Nord: prioritate Nord dacă așteaptă
+        
         if (p->asteapta_nord > 0) {
             printf("   -> Pod liber! Prioritate NORD (Broadcast)\n");
             condition_broadcast(&p->coada_nord);
@@ -188,7 +182,7 @@ int main() {
     for (int i = 0; i < 20; i++) {
         int* dir = malloc(sizeof(int));
 
-        // Primele 8 Nord, apoi 5 Sud, apoi restul Nord
+        
         if (i < 8) *dir = NORD;
         else if (i < 13) *dir = SUD;
         else *dir = NORD;
